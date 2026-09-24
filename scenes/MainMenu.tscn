@@ -14,11 +14,48 @@ anchors_preset=15
 anchor_right=1.0
 anchor_bottom=1.0
 color=Color(0.025,0.065,0.12,1)
+[node name="Title" type="Label" parent="."]
+offset_left=54.0
+offset_top=90.0
+offset_right=1026.0
+offset_bottom=180.0
+text="WORLD DEFENSE"
+theme_override_font_sizes/font_size=54
+[node name="Stats" type="Label" parent="."]
+offset_left=54.0
+offset_top=205.0
+offset_right=1026.0
+offset_bottom=285.0
+theme_override_font_sizes/font_size=28
+[node name="Cards" type="GridContainer" parent="."]
+offset_left=54.0
+offset_top=360.0
+offset_right=1026.0
+offset_bottom=1000.0
+columns=2
+[node name="Defense" type="Button" parent="Cards"]
+custom_minimum_size=Vector2(470,230)
+text="SAVUNMA"
+[node name="Army" type="Button" parent="Cards"]
+custom_minimum_size=Vector2(470,230)
+text="ORDU"
+[node name="Base" type="Button" parent="Cards"]
+custom_minimum_size=Vector2(470,230)
+text="ÜS"
+[node name="Intel" type="Button" parent="Cards"]
+custom_minimum_size=Vector2(470,230)
+text="İSTİHBARAT"
 [node name="Play" type="Button" parent="."]
-layout_mode=0
-offset_left=190.0
-offset_top=1430.0
-offset_right=890.0
-offset_bottom=1580.0
+offset_left=140.0
+offset_top=1450.0
+offset_right=940.0
+offset_bottom=1625.0
 text="SAVAŞ"
 theme_override_font_sizes/font_size=48
+[node name="Offline" type="Label" parent="."]
+offset_left=140.0
+offset_top=1660.0
+offset_right=940.0
+offset_bottom=1720.0
+horizontal_alignment=1
+theme_override_font_sizes/font_size=24
