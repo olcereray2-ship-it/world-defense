@@ -1,0 +1,1 @@
+{"stages":250,"waves_per_stage":5,"offline_cap_hours":6,"tower_max_level":100,"unit_max_level":100,"general_max_level":50,"languages":["en","de","fr","ko","ja"],"battle_target_minutes":[3,5],"adaptive":{"history_battles":10,"normal_ratio":0.75,"counter_ratio":0.25,"dominance_threshold":0.45}}
