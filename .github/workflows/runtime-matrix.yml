@@ -1,4 +1,4 @@
-name: Android Runtime Matrix 50
+name: Modern Android Runtime QA 8
 
 on:
   pull_request:
@@ -75,6 +75,8 @@ jobs:
           godot --headless --path . --export-debug Android builds/World-Defense-runtime.apk 2>&1 | tee builds/godot-export.log
           test -s builds/World-Defense-runtime.apk
           unzip -tq builds/World-Defense-runtime.apk
+          ! grep -E "SCRIPT ERROR|Parse Error|Failed to load script|^ERROR:" builds/godot-export.log
+          "$ANDROID_HOME/build-tools/36.0.0/zipalign" -c -P 16 4 builds/World-Defense-runtime.apk
           "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --verbose --print-certs builds/World-Defense-runtime.apk | tee builds/apksigner.txt
           "$ANDROID_HOME/build-tools/36.0.0/aapt" dump badging builds/World-Defense-runtime.apk | tee builds/badging.txt
           sha256sum builds/World-Defense-runtime.apk | tee builds/SHA256.txt
@@ -95,89 +97,21 @@ jobs:
       matrix:
         include:
           - api: 35
-            profile: medium_phone
-            brand: Samsung
-            model: Galaxy A06
-            width: 720
-            height: 1600
-            ram: 4096
+            profile: pixel_8a
           - api: 35
-            profile: medium_phone
-            brand: Samsung
-            model: Galaxy A16 5G
-            width: 1080
-            height: 2340
-            ram: 8192
+            profile: pixel_9
           - api: 35
-            profile: medium_phone
-            brand: Samsung
-            model: Galaxy S24 Ultra
-            width: 1440
-            height: 3120
-            ram: 12288
+            profile: pixel_9_pro
           - api: 35
-            profile: medium_phone
-            brand: Xiaomi
-            model: Redmi 14C
-            width: 720
-            height: 1640
-            ram: 6144
+            profile: pixel_9_pro_xl
           - api: 35
-            profile: medium_phone
-            brand: Xiaomi
-            model: Redmi Note 14 5G
-            width: 1080
-            height: 2400
-            ram: 8192
+            profile: pixel_9_pro_fold
           - api: 36
-            profile: medium_phone
-            brand: Xiaomi
-            model: Redmi A5
-            width: 720
-            height: 1640
-            ram: 3072
-          - api: 35
-            profile: medium_phone
-            brand: OPPO
-            model: A3 5G
-            width: 720
-            height: 1604
-            ram: 4096
-          - api: 35
-            profile: medium_phone
-            brand: OPPO
-            model: Reno13 5G
-            width: 1256
-            height: 2760
-            ram: 8192
+            profile: pixel_10
           - api: 36
-            profile: medium_phone
-            brand: OPPO
-            model: Reno14 5G
-            width: 1256
-            height: 2760
-            ram: 8192
-          - api: 35
-            profile: medium_phone
-            brand: vivo
-            model: Y28s 5G
-            width: 720
-            height: 1612
-            ram: 8192
-          - api: 35
-            profile: medium_phone
-            brand: vivo
-            model: T3 Lite 5G
-            width: 720
-            height: 1612
-            ram: 4096
-          - api: 35
-            profile: medium_phone
-            brand: vivo
-            model: X200
-            width: 1260
-            height: 2800
-            ram: 12288
+            profile: pixel_10_pro
+          - api: 36
+            profile: pixel_10_pro_xl
     steps:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
@@ -191,13 +125,12 @@ jobs:
           arch: x86_64
           target: google_apis
           profile: ${{ matrix.profile }}
-          ram-size: ${{ matrix.ram }}M
           disable-animations: false
-          emulator-options: -no-snapshot -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -skin ${{ matrix.width }}x${{ matrix.height }}
-          script: bash .github/scripts/runtime-test.sh "${{ matrix.api }}" "${{ matrix.brand }}-${{ matrix.model }}"
+          emulator-options: -no-snapshot -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          script: bash .github/scripts/runtime-test.sh "${{ matrix.api }}" "${{ matrix.profile }}"
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: runtime-${{ matrix.api }}-${{ matrix.brand }}-${{ matrix.model }}
-          path: runtime-${{ matrix.api }}-${{ matrix.brand }}-${{ matrix.model }}/
+          name: runtime-${{ matrix.api }}-${{ matrix.profile }}
+          path: runtime-${{ matrix.api }}-${{ matrix.profile }}/
           retention-days: 14
