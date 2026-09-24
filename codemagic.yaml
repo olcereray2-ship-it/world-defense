@@ -1,0 +1,14 @@
+workflows:
+  world-defense-debug:
+    name: World Defense Android APK
+    instance_type: linux_x2
+    max_build_duration: 60
+    scripts:
+      - name: Build Godot Android APK
+        script: |
+          chmod +x cloud-build.sh
+          ./cloud-build.sh
+    artifacts:
+      - build/World-Defense.apk
+      - build/SHA256.txt
+      - build/SIZE_BYTES.txt
