@@ -1,5 +1,6 @@
 extends Control
 func _ready():
+ print("WORLD_DEFENSE_MAIN_MENU_READY")
  $Play.pressed.connect(_battle)
  $Cards/Defense.pressed.connect(func(): _upgrade("tower","machine_gun"))
  $Cards/Army.pressed.connect(func(): _upgrade("unit","infantry"))
