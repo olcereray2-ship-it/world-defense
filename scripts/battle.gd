@@ -1,88 +1,73 @@
 extends Node2D
 var wave:=0
-var wave_time:=0.0
-var base_hp:=1000.0
+var timer:=0.0
+var hp:=1000.0
 var credits:=500
 var enemies:Array=[]
-var bullets:Array=[]
-var towers=[Vector2(190,980),Vector2(500,850),Vector2(790,1070)]
-var path=PackedVector2Array([Vector2(-60,1260),Vector2(260,1110),Vector2(520,1280),Vector2(790,1040),Vector2(1140,920)])
-var finished:=false
-var shot_clock:=0.0
-var audio:=AudioStreamPlayer.new()
-var stage:Dictionary
+var shots:Array=[]
+var explosions:Array=[]
+var done:=false
+var route:PackedVector2Array
+var towers:Array[Vector2]=[Vector2(180,960),Vector2(510,850),Vector2(800,1100)]
+var stage_data:Dictionary
 func _ready():
- add_child(audio)
- stage=StageGenerator.stage_data(GameState.stage)
+ stage_data=StageGenerator.data(GameState.stage);route=StageGenerator.route(str(stage_data.get("route","single")));queue_redraw()
+func _process(d:float):
+ if done:return
+ timer+=d
+ if wave<5 and timer>=4.0:wave+=1;timer=0.0;spawn_wave()
+ move_enemies(d);fire(d);update_vfx(d)
+ if wave==5 and enemies.is_empty() and timer>2.0:win()
  queue_redraw()
-func _process(delta):
- if finished:return
- wave_time+=delta
- if wave<5 and wave_time>=4.0:
-  wave+=1; wave_time=0.0; _spawn_wave()
- _move_enemies(delta); _fire(delta)
- if wave==5 and enemies.is_empty() and wave_time>2.0:_victory()
- queue_redraw()
-func _spawn_wave():
+func spawn_wave():
  var budget=StageGenerator.wave_budget(StageGenerator.threat(GameState.stage,GameState.power()),wave)
- var count=clamp(5+wave*3+GameState.stage/8,8,36)
- var hp=max(65.0,float(budget)/float(count)*0.9)
- for i in count:
-  enemies.append({"p":path[0]-Vector2(i*24,0),"seg":0,"hp":hp,"max":hp,"speed":65.0+wave*7.0+(i%4)*4.0,"air":wave>=3 and i%7==0})
-func _move_enemies(delta):
+ var count:int=clampi(5+wave*3+GameState.stage/8,8,36)
+ var ehp=maxf(65.0,float(budget)/float(count)*0.9)
+ for i in range(count):enemies.append({"p":route[0]-Vector2(i*22,0),"seg":0,"hp":ehp,"max":ehp,"speed":65.0+wave*7+(i%4)*4,"air":wave>=3 and i%7==0})
+ if wave==5 and GameState.stage%10==0:enemies.append({"p":route[0]-Vector2(80,0),"seg":0,"hp":ehp*8.0,"max":ehp*8.0,"speed":42.0,"air":false})
+func move_enemies(d:float):
  for e in enemies.duplicate():
-  if e.air:
-   e.p=e.p.move_toward(Vector2(540,1450),e.speed*delta)
-   if e.p.distance_to(Vector2(540,1450))<25:_hit_base(e,34)
+  if bool(e.air):
+   e.p=e.p.move_toward(Vector2(540,1450),float(e.speed)*d)
+   if e.p.distance_to(Vector2(540,1450))<25.0:hit_base(e,34.0)
   else:
    var n=int(e.seg)+1
-   if n>=path.size():_hit_base(e,28);continue
-   e.p=e.p.move_toward(path[n],e.speed*delta)
-   if e.p.distance_to(path[n])<10:e.seg=n
- if base_hp<=0:_defeat()
-func _hit_base(e,dmg):
- base_hp-=dmg
- enemies.erase(e)
-func _fire(delta):
- shot_clock=max(0.0,shot_clock-delta)
+   if n>=route.size():hit_base(e,28.0);continue
+   e.p=e.p.move_toward(route[n],float(e.speed)*d)
+   if e.p.distance_to(route[n])<10.0:e.seg=n
+ if hp<=0.0:lose()
+func hit_base(e:Dictionary,damage:float):hp-=damage;enemies.erase(e);explosions.append({"p":Vector2(540,1450),"age":0.0})
+func fire(d:float):
  for t in towers:
-  var target=null; var dist=99999.0
+  var target=null;var dist:=INF
   for e in enemies:
-   var d=t.distance_to(e.p)
-   if d<330 and d<dist:target=e;dist=d
-  if target and randi()%max(1,int(9.0/max(delta*60.0,1.0)))==0:
-   target.hp-=26.0+GameState.tower_levels.machine_gun*2.5
-   bullets.append({"a":t,"b":target.p,"life":0.08})
-   if shot_clock<=0.0:
-    audio.stream=AudioFactory.tone(190.0,0.055,0.16);audio.play();shot_clock=0.09
-   if target.hp<=0: enemies.erase(target);credits+=8
- for b in bullets.duplicate():
-  b.life-=delta
-  if b.life<=0:bullets.erase(b)
-func _victory():
- finished=true
- var r=Progression.stage_reward(GameState.stage)
- GameState.gold+=r.gold;GameState.xp+=r.xp;GameState.gems+=r.gems
- GameState.battle_history.append({"dominant":"tower","stage":GameState.stage})
- if GameState.battle_history.size()>10:GameState.battle_history.pop_front()
+   var x=t.distance_to(e.p)
+   if x<330.0 and x<dist:target=e;dist=x
+  if target!=null and randf()<d*4.5:
+   target.hp-=26.0+float(GameState.tower_levels.get("machine_gun",1))*2.5;shots.append({"a":t,"b":target.p,"life":0.08})
+   if target.hp<=0.0:explosions.append({"p":target.p,"age":0.0});enemies.erase(target);credits+=8
+ for s in shots.duplicate():
+  s.life-=d
+  if s.life<=0.0:shots.erase(s)
+func update_vfx(d:float):
+ for x in explosions.duplicate():
+  x.age+=d
+  if x.age>0.45:explosions.erase(x)
+func win():
+ if done:return
+ done=true;GameState.gold+=450+GameState.stage*38;GameState.xp+=90+GameState.stage*12
+ if GameState.stage%5==0:GameState.gems+=1
  GameState.stage=min(250,GameState.stage+1);GameState.save_game()
- await get_tree().create_timer(1.2).timeout;get_tree().change_scene_to_file("res://scenes/MainMenu.tscn")
-func _defeat():
- finished=true;GameState.save_game()
- await get_tree().create_timer(1.2).timeout;get_tree().change_scene_to_file("res://scenes/MainMenu.tscn")
+ await get_tree().create_timer(1.0).timeout;get_tree().change_scene_to_file("res://scenes/MainMenu.tscn")
+func lose():
+ if done:return
+ done=true;GameState.save_game();await get_tree().create_timer(1.0).timeout;get_tree().change_scene_to_file("res://scenes/MainMenu.tscn")
 func _draw():
- var biome={"desert":Color("#6d5c3d"),"city":Color("#39434b"),"snow":Color("#8ca4ac"),"mountain":Color("#3f5146"),"coast":Color("#386b68")}.get(stage.get("biome","desert"),Color("#20392d"))
- draw_rect(Rect2(0,0,1080,1920),biome)
- draw_polyline(path,Color("#81715b"),150,true)
- if stage.get("bridge",false):
-  draw_rect(Rect2(420,1130,250,170),Color("#4a3a2c"))
- for t in towers:
-  draw_circle(t,55,Color("#213b58"));draw_circle(t,26,Color("#9ba9b4"))
- for e in enemies:
-  var col=Color("#a53d35") if not e.air else Color("#782f88")
-  draw_circle(e.p,24,col)
-  draw_rect(Rect2(e.p+Vector2(-25,-38),Vector2(50,5)),Color("#171717"))
-  draw_rect(Rect2(e.p+Vector2(-25,-38),Vector2(50*max(0.0,e.hp/e.max),5)),Color("#d4d86a"))
- for b in bullets:draw_line(b.a,b.b,Color.WHITE,5)
- draw_rect(Rect2(30,35,1020,105),Color(0.02,0.04,0.07,0.82))
- draw_string(ThemeDB.fallback_font,Vector2(60,100),"BÖLÜM %d   DALGA %d/5   ÜS %d   $%d"%[GameState.stage,wave,int(base_hp),credits],HORIZONTAL_ALIGNMENT_LEFT,900,34,Color.WHITE)
+ var c:Color={"desert":Color("#6d5c3d"),"city":Color("#39434b"),"snow":Color("#8ca4ac"),"mountain":Color("#3f5146"),"coast":Color("#386b68")}.get(stage_data.get("biome","desert"),Color("#20392d"))
+ draw_rect(Rect2(0,0,1080,1920),c);draw_polyline(route,Color("#81715b"),150.0,true)
+ if bool(stage_data.get("bridge",false)):draw_rect(Rect2(420,1120,260,180),Color("#49392c"))
+ for t in towers:draw_circle(t,55,Color("#213b58"));draw_circle(t,25,Color("#aab5bd"))
+ for e in enemies:draw_circle(e.p,24,Color("#7c318d") if e.air else Color("#ad4138"));draw_rect(Rect2(e.p+Vector2(-25,-38),Vector2(50.0*maxf(0.0,float(e.hp)/float(e.max)),5)),Color("#d8dd6d"))
+ for s in shots:draw_line(s.a,s.b,Color.WHITE,5)
+ for x in explosions:draw_circle(x.p,20.0+float(x.age)*110.0,Color(1.0,0.55,0.15,maxf(0.0,1.0-float(x.age)*2.2)))
+ draw_rect(Rect2(30,35,1020,105),Color(0.02,0.04,0.07,.82));draw_string(ThemeDB.fallback_font,Vector2(60,100),"BÖLÜM %d   DALGA %d/5   ÜS %d   $%d"%[GameState.stage,wave,int(hp),credits],HORIZONTAL_ALIGNMENT_LEFT,900,34,Color.WHITE)
