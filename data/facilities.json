@@ -1,0 +1,1 @@
+{"hq":{"max":100},"factory":{"max":100,"produces":["infantry"]},"hangar":{"max":100,"produces":["tank","artillery"]},"airbase":{"max":100,"produces":["helicopter","fighter"]},"ammo":{"max":100},"warehouse":{"max":100}}
