@@ -91,10 +91,18 @@ jobs:
     timeout-minutes: 45
     strategy:
       fail-fast: false
-      max-parallel: 2
+      max-parallel: 3
       matrix:
-        api: [26,27,28,29,30,31,32,33,34,35]
-        profile: [pixel_2,pixel_3a,pixel_4,pixel_5,pixel_6]
+        include:
+          - api: 36
+            profile: pixel_10
+            model: Pixel 10
+          - api: 36
+            profile: pixel_10_pro
+            model: Pixel 10 Pro
+          - api: 36
+            profile: pixel_10_pro_xl
+            model: Pixel 10 Pro XL
     steps:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
