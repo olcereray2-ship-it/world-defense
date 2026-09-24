@@ -8,8 +8,11 @@ var bullets:Array=[]
 var towers=[Vector2(190,980),Vector2(500,850),Vector2(790,1070)]
 var path=PackedVector2Array([Vector2(-60,1260),Vector2(260,1110),Vector2(520,1280),Vector2(790,1040),Vector2(1140,920)])
 var finished:=false
+var shot_clock:=0.0
+var audio:=AudioStreamPlayer.new()
 var stage:Dictionary
 func _ready():
+ add_child(audio)
  stage=StageGenerator.stage_data(GameState.stage)
  queue_redraw()
 func _process(delta):
@@ -41,6 +44,7 @@ func _hit_base(e,dmg):
  base_hp-=dmg
  enemies.erase(e)
 func _fire(delta):
+ shot_clock=max(0.0,shot_clock-delta)
  for t in towers:
   var target=null; var dist=99999.0
   for e in enemies:
@@ -49,6 +53,8 @@ func _fire(delta):
   if target and randi()%max(1,int(9.0/max(delta*60.0,1.0)))==0:
    target.hp-=26.0+GameState.tower_levels.machine_gun*2.5
    bullets.append({"a":t,"b":target.p,"life":0.08})
+   if shot_clock<=0.0:
+    audio.stream=AudioFactory.tone(190.0,0.055,0.16);audio.play();shot_clock=0.09
    if target.hp<=0: enemies.erase(target);credits+=8
  for b in bullets.duplicate():
   b.life-=delta
