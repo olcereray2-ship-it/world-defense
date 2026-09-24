@@ -1,0 +1,1 @@
+{"rarities":["common","rare","epic","legendary"],"max_level":50,"generals":[{"id":"logistics","trait":"production","bonus_max":0.20},{"id":"armor","trait":"ground","bonus_max":0.18},{"id":"falcon","trait":"air","bonus_max":0.18},{"id":"guardian","trait":"defense","bonus_max":0.18}]}
