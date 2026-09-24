@@ -94,6 +94,21 @@ jobs:
       max-parallel: 3
       matrix:
         include:
+          - api: 35
+            profile: pixel_8a
+            model: Pixel 8a
+          - api: 35
+            profile: pixel_9
+            model: Pixel 9
+          - api: 35
+            profile: pixel_9_pro
+            model: Pixel 9 Pro
+          - api: 35
+            profile: pixel_9_pro_xl
+            model: Pixel 9 Pro XL
+          - api: 35
+            profile: pixel_9_pro_fold
+            model: Pixel 9 Pro Fold
           - api: 36
             profile: pixel_10
             model: Pixel 10
