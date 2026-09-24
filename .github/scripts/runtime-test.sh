@@ -11,7 +11,7 @@ adb install -r -t builds/World-Defense-runtime.apk | tee "$OUT/install.txt"
 adb shell pm clear "$PKG" || true
 adb shell run-as "$PKG" mkdir -p files
 adb shell run-as "$PKG" touch files/qa_fast.flag
-adb logcat -c
+adb logcat -b all -c >/dev/null 2>&1 || true
 adb shell monkey -p "$PKG" -c android.intent.category.LAUNCHER 1 | tee "$OUT/launch.txt"
 for _ in $(seq 1 30); do
   adb logcat -d -v brief > "$OUT/logcat.txt"
@@ -40,7 +40,7 @@ grep -Eq "WORLD_DEFENSE_WAVE_[345]_STAGE_1_ENEMIES_[0-9]+_AIR_[1-9]" "$OUT/battl
 adb exec-out screencap -p > "$OUT/battle-screen.png" || true
 adb shell am force-stop "$PKG"
 adb shell run-as "$PKG" touch files/qa.flag
-adb logcat -c
+adb logcat -b all -c >/dev/null 2>&1 || true
 adb shell monkey -p "$PKG" -c android.intent.category.LAUNCHER 1 > "$OUT/qa-launch.txt"
 for _ in $(seq 1 90); do
   adb logcat -d -v threadtime > "$OUT/deep-qa-android.txt"
