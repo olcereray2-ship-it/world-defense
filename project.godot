@@ -1,10 +1,10 @@
 ; World Defense
 config_version=5
-
 [application]
 config/name="World Defense"
 run/main_scene="res://scenes/Boot.tscn"
-
+[autoload]
+GameState="*res://scripts/game_state.gd"
 [display]
 window/size/viewport_width=1080
 window/size/viewport_height=1920
@@ -12,7 +12,6 @@ window/size/window_width_override=540
 window/size/window_height_override=960
 window/stretch/mode="canvas_items"
 window/handheld/orientation=1
-
 [rendering]
 renderer/rendering_method="gl_compatibility"
 renderer/rendering_method.mobile="gl_compatibility"
