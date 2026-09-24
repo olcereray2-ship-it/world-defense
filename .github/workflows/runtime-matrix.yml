@@ -88,10 +88,10 @@ jobs:
   runtime:
     needs: build
     runs-on: ubuntu-24.04
-    timeout-minutes: 30
+    timeout-minutes: 45
     strategy:
       fail-fast: false
-      max-parallel: 5
+      max-parallel: 2
       matrix:
         api: [26,27,28,29,30,31,32,33,34,35]
         profile: [pixel_2,pixel_3a,pixel_4,pixel_5,pixel_6]
@@ -108,7 +108,7 @@ jobs:
           arch: x86_64
           target: google_apis
           profile: ${{ matrix.profile }}
-          disable-animations: true
+          disable-animations: false
           emulator-options: -no-snapshot -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           script: bash .github/scripts/runtime-test.sh ${{ matrix.api }} ${{ matrix.profile }}
       - uses: actions/upload-artifact@v4
