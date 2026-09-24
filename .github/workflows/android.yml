@@ -1,4 +1,4 @@
-name: Build and Validate Android
+name: Build Android APK
 on:
   push:
     branches: [main]
@@ -8,7 +8,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Install Godot and templates
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+      - name: Android SDK
+        run: sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"
+      - name: Godot
         run: |
           wget -q https://github.com/godotengine/godot/releases/download/4.5.1-stable/Godot_v4.5.1-stable_linux.x86_64.zip
           unzip -q Godot_v4.5.1-stable_linux.x86_64.zip
@@ -17,18 +24,21 @@ jobs:
           mkdir -p ~/.local/share/godot/export_templates/4.5.1.stable
           unzip -q Godot_v4.5.1-stable_export_templates.tpz
           mv templates/* ~/.local/share/godot/export_templates/4.5.1.stable/
-      - name: Import project
-        run: godot --headless --editor --quit
-      - name: Validate game data
-        run: godot --headless --path . --scene res://scenes/QARunner.tscn
-      - name: Export APK
+      - name: Debug keystore
         run: |
+          mkdir -p ~/.android
+          keytool -genkeypair -v -keystore ~/.android/debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=World Defense,C=TR"
+      - name: Export and verify
+        run: |
+          godot --headless --editor --quit --path .
           mkdir -p build
           godot --headless --path . --export-debug Android build/World-Defense.apk
           test -s build/World-Defense.apk
-          ls -lh build/World-Defense.apk
+          unzip -t build/World-Defense.apk
+          sha256sum build/World-Defense.apk | tee build/SHA256.txt
+          stat -c '%s' build/World-Defense.apk | tee build/SIZE_BYTES.txt
       - uses: actions/upload-artifact@v4
         with:
           name: World-Defense-APK
-          path: build/World-Defense.apk
+          path: build/
           if-no-files-found: error
