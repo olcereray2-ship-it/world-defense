@@ -1,0 +1,29 @@
+name: Build Android APK
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Godot and export templates
+        run: |
+          wget -q https://github.com/godotengine/godot/releases/download/4.5.1-stable/Godot_v4.5.1-stable_linux.x86_64.zip
+          unzip -q Godot_v4.5.1-stable_linux.x86_64.zip
+          sudo mv Godot_v4.5.1-stable_linux.x86_64 /usr/local/bin/godot
+          wget -q https://github.com/godotengine/godot/releases/download/4.5.1-stable/Godot_v4.5.1-stable_export_templates.tpz
+          mkdir -p ~/.local/share/godot/export_templates/4.5.1.stable
+          unzip -q Godot_v4.5.1-stable_export_templates.tpz
+          mv templates/* ~/.local/share/godot/export_templates/4.5.1.stable/
+      - name: Export APK
+        run: |
+          mkdir -p build
+          godot --headless --editor --quit
+          godot --headless --export-debug Android build/World-Defense.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: World-Defense-APK
+          path: build/World-Defense.apk
+          if-no-files-found: error
