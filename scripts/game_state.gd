@@ -58,7 +58,7 @@ func load_game()->bool:
   push_error("WORLD_DEFENSE_SAVE_READ_FAILED:%s"%FileAccess.get_open_error())
   return false
  var raw=f.get_var()
- if not raw is Dictionary:
+ if not (raw is Dictionary):
   push_error("WORLD_DEFENSE_SAVE_INVALID")
   return false
  var d=SaveMigration.migrate(raw)
