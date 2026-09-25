@@ -12,7 +12,7 @@ static func collect_ready(q:Array,now:int)->Array:
  var ready:Array=[]
  var t=maxi(0,now)
  for x in q.duplicate():
-  if not x is Dictionary:
+  if not (x is Dictionary):
    q.erase(x)
    continue
   if int(x.get("finish_at",0))<=t:
