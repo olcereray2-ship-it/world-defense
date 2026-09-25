@@ -1,8 +1,6 @@
 name: Non-Pixel Android Runtime QA 8
 
 on:
-  pull_request:
-    branches: [main]
   workflow_dispatch: {}
 
 permissions:
