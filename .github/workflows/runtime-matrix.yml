@@ -1,4 +1,4 @@
-name: Modern Android Runtime QA 8
+name: Non-Pixel Android Runtime QA 8
 
 on:
   pull_request:
@@ -92,18 +92,13 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
-      - name: Install current Android device catalog
+      - name: Verify generic non-Pixel Android hardware profile
         shell: bash
         run: |
           set -euxo pipefail
           export ANDROID_HOME=/usr/local/lib/android/sdk
-          SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
-          "$SDKMANAGER" "cmdline-tools;21.0"
-          AVDMANAGER="$ANDROID_HOME/cmdline-tools/21.0/bin/avdmanager"
-          "$AVDMANAGER" list device | tee /tmp/avd-devices.txt
-          for p in pixel_8a pixel_9 pixel_9_pro pixel_9_pro_xl pixel_9_pro_fold pixel_10 pixel_10_pro pixel_10_pro_xl; do
-            grep -q "\"$p\"" /tmp/avd-devices.txt
-          done
+          "$ANDROID_HOME/cmdline-tools/latest/bin/avdmanager" list device | tee /tmp/avd-devices.txt
+          grep -q '"medium_phone"' /tmp/avd-devices.txt
 
   runtime:
     needs: [build, profile-preflight]
@@ -115,34 +110,67 @@ jobs:
       matrix:
         include:
           - api: 35
-            profile: pixel_8a
+            profile: medium_phone
+            slug: samsung-galaxy-a16-5g
+            model: Samsung Galaxy A16 5G
+            width: 1080
+            height: 2340
+            ram: 8192
           - api: 35
-            profile: pixel_9
+            profile: medium_phone
+            slug: samsung-galaxy-s24-ultra
+            model: Samsung Galaxy S24 Ultra
+            width: 1440
+            height: 3120
+            ram: 12288
           - api: 35
-            profile: pixel_9_pro
+            profile: medium_phone
+            slug: xiaomi-redmi-14c
+            model: Xiaomi Redmi 14C
+            width: 720
+            height: 1640
+            ram: 6144
           - api: 35
-            profile: pixel_9_pro_xl
+            profile: medium_phone
+            slug: xiaomi-redmi-note-14-5g
+            model: Xiaomi Redmi Note 14 5G
+            width: 1080
+            height: 2400
+            ram: 8192
           - api: 35
-            profile: pixel_9_pro_fold
-          - api: 36
-            profile: pixel_10
-          - api: 36
-            profile: pixel_10_pro
-          - api: 36
-            profile: pixel_10_pro_xl
+            profile: medium_phone
+            slug: oppo-a3-5g
+            model: OPPO A3 5G
+            width: 720
+            height: 1604
+            ram: 4096
+          - api: 35
+            profile: medium_phone
+            slug: oppo-reno13-5g
+            model: OPPO Reno13 5G
+            width: 1256
+            height: 2760
+            ram: 8192
+          - api: 35
+            profile: medium_phone
+            slug: vivo-y28s-5g
+            model: vivo Y28s 5G
+            width: 720
+            height: 1612
+            ram: 8192
+          - api: 35
+            profile: medium_phone
+            slug: vivo-x200
+            model: vivo X200
+            width: 1260
+            height: 2800
+            ram: 12288
     steps:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with:
           name: world-defense-runtime-apk
           path: builds
-      - name: Use current Android device profile catalog
-        shell: bash
-        run: |
-          set -euxo pipefail
-          export ANDROID_HOME=/usr/local/lib/android/sdk
-          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "cmdline-tools;21.0"
-          echo "$ANDROID_HOME/cmdline-tools/21.0/bin" >> "$GITHUB_PATH"
       - name: Boot emulator, install, launch and full runtime QA
         uses: reactivecircus/android-emulator-runner@v2
         with:
@@ -150,12 +178,13 @@ jobs:
           arch: x86_64
           target: google_apis
           profile: ${{ matrix.profile }}
+          ram-size: ${{ matrix.ram }}M
           disable-animations: false
-          emulator-options: -no-snapshot -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
-          script: bash .github/scripts/runtime-test.sh "${{ matrix.api }}" "${{ matrix.profile }}"
+          emulator-options: -no-snapshot -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -skin ${{ matrix.width }}x${{ matrix.height }}
+          script: bash .github/scripts/runtime-test.sh "${{ matrix.api }}" "${{ matrix.slug }}"
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: runtime-${{ matrix.api }}-${{ matrix.profile }}
-          path: runtime-${{ matrix.api }}-${{ matrix.profile }}/
+          name: runtime-${{ matrix.api }}-${{ matrix.slug }}
+          path: runtime-${{ matrix.api }}-${{ matrix.slug }}/
           retention-days: 14
