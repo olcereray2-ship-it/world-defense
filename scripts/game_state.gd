@@ -14,6 +14,10 @@ var tower_levels=DEFAULT_TOWER_LEVELS.duplicate(true)
 var unit_levels=DEFAULT_UNIT_LEVELS.duplicate(true)
 var facility_levels=DEFAULT_FACILITY_LEVELS.duplicate(true)
 var battle_history:Array=[]
+var research:Dictionary={}
+var generals:Dictionary={}
+var events:Dictionary={}
+var achievements:Array=[]
 var last_offline_claim:=0
 
 func _ready():
@@ -41,6 +45,10 @@ func save_game()->bool:
   "unit_levels":unit_levels,
   "facility_levels":facility_levels,
   "battle_history":battle_history,
+  "research":research,
+  "generals":generals,
+  "events":events,
+  "achievements":achievements,
   "last_offline_claim":last_offline_claim,
   "saved_at":now
  }
@@ -73,6 +81,14 @@ func load_game()->bool:
  var history=d.get("battle_history",[])
  battle_history=history.duplicate(true) if history is Array else []
  while battle_history.size()>10:battle_history.pop_front()
+ var research_value=d.get("research",{})
+ research=research_value.duplicate(true) if research_value is Dictionary else {}
+ var generals_value=d.get("generals",{})
+ generals=generals_value.duplicate(true) if generals_value is Dictionary else {}
+ var events_value=d.get("events",{})
+ events=events_value.duplicate(true) if events_value is Dictionary else {}
+ var achievements_value=d.get("achievements",[])
+ achievements=achievements_value.duplicate(true) if achievements_value is Array else []
  var fallback_claim=int(d.get("saved_at",Time.get_unix_time_from_system()))
  last_offline_claim=maxi(0,int(d.get("last_offline_claim",fallback_claim)))
  return true
