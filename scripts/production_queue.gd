@@ -1,10 +1,21 @@
 class_name ProductionQueue
+
 const MAX_SLOTS=3
+
 static func enqueue(q:Array,item:String,finish_at:int)->bool:
- if q.size()>=MAX_SLOTS:return false
- q.append({"item":item,"finish_at":finish_at});return true
+ var id=item.strip_edges()
+ if id.is_empty() or q.size()>=MAX_SLOTS:return false
+ q.append({"item":id,"finish_at":maxi(0,finish_at)})
+ return true
+
 static func collect_ready(q:Array,now:int)->Array:
  var ready:Array=[]
+ var t=maxi(0,now)
  for x in q.duplicate():
-  if int(x.finish_at)<=now:ready.append(x);q.erase(x)
+  if not x is Dictionary:
+   q.erase(x)
+   continue
+  if int(x.get("finish_at",0))<=t:
+   ready.append(x)
+   q.erase(x)
  return ready
