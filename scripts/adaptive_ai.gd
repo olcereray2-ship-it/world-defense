@@ -8,7 +8,7 @@ static func composition(history:Array,loadout:Dictionary)->Dictionary:
  var start=maxi(0,history.size()-10)
  for i in range(start,history.size()):
   var b=history[i]
-  if not b is Dictionary:continue
+  if not (b is Dictionary):continue
   var dom=str(b.get("dominant",""))
   if scores.has(dom):scores[dom]=float(scores[dom])+0.15
  var dominant="infantry"
