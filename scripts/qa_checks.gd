@@ -31,6 +31,7 @@ static func run()->Array:
  _expect(errors,generals_data is Dictionary and generals_data.get("generals",[]).size()==4,"generals_data")
  _expect(errors,missions_data is Dictionary and missions_data.get("daily",[]).size()==3 and missions_data.get("weekly",[]).size()==2,"missions_data")
  _expect(errors,economy_data is Dictionary and int(economy_data.get("offline",{}).get("cap_hours",0))==6,"economy_data")
+ _expect(errors,str(economy_data.get("currencies",{}).get("supplies",""))=="base_production","economy_supplies")
  _expect(errors,config_data is Dictionary and int(config_data.get("stages",0))==250 and int(config_data.get("waves_per_stage",0))==5,"game_config")
  _expect(errors,milestones_data is Dictionary and float(milestones_data.get("difficulty_total_multiplier_at_250",0.0))==5.0,"milestones_data")
  _expect(errors,units_data is Dictionary and units_data.get("player",[])==ContentCatalog.UNITS,"player_unit_catalog")
@@ -147,6 +148,8 @@ static func run()->Array:
  _expect(errors,not BridgeRules.can_place_fixed({"bridge":true},Vector2(500,1200)),"bridge_build_rule")
  _expect(errors,BridgeRules.can_place_fixed({"bridge":false},Vector2(500,1200)),"normal_build_rule")
  _expect(errors,BridgeRules.mobile_hold_bonus("tank")>1.0,"bridge_tank_bonus")
+ _expect(errors,str(BossSystem.profile(10).get("name",""))=="JUGGERNAUT","boss_cycle_10")
+ _expect(errors,str(BossSystem.profile(20).get("name",""))=="SKY REAPER","boss_cycle_20")
 
  var last_tower_cost=0
  var last_unit_cost=0
@@ -252,7 +255,7 @@ static func run()->Array:
  _expect(errors,CombatMath.dps(100.0,2.0)==50.0,"dps_math")
  _expect(errors,Targeting.priority("missile","fighter")>1.0,"targeting_air")
  _expect(errors,Targeting.priority("cannon","heavy_tank")>1.0,"targeting_armor")
- _expect(errors,MobileArmy.matchup("helicopter","tank")>1.0,"matchup_heli_tank")
+ _expect(errors,MobileArmy.matchup("helicopter","heavy_tank")>1.0,"matchup_heli_tank")
 
  var tutorial=TutorialPlan.steps()
  _expect(errors,tutorial.size()==5,"tutorial_steps")
