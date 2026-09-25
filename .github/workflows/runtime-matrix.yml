@@ -1,0 +1,188 @@
+name: Non-Pixel Android Runtime QA 8
+
+on:
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Install Android SDK
+        shell: bash
+        run: |
+          set -euxo pipefail
+          export ANDROID_HOME=/usr/local/lib/android/sdk
+          export ANDROID_SDK_ROOT=$ANDROID_HOME
+          SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          yes | "$SDKMANAGER" --licenses >/dev/null || true
+          "$SDKMANAGER" "platform-tools" "platforms;android-36" "build-tools;36.0.0"
+          echo "ANDROID_HOME=$ANDROID_HOME" >> "$GITHUB_ENV"
+          echo "ANDROID_SDK_ROOT=$ANDROID_HOME" >> "$GITHUB_ENV"
+      - name: Install Godot 4.7.2 and Android templates
+        shell: bash
+        run: |
+          set -euxo pipefail
+          wget -q https://github.com/godotengine/godot-builds/releases/download/4.7.2-stable/Godot_v4.7.2-stable_linux.x86_64.zip
+          unzip -q Godot_v4.7.2-stable_linux.x86_64.zip
+          chmod +x Godot_v4.7.2-stable_linux.x86_64
+          sudo install Godot_v4.7.2-stable_linux.x86_64 /usr/local/bin/godot
+          wget -q https://github.com/godotengine/godot-builds/releases/download/4.7.2-stable/Godot_v4.7.2-stable_export_templates.tpz
+          rm -rf /tmp/godot-templates
+          mkdir -p /tmp/godot-templates ~/.local/share/godot/export_templates/4.7.2.stable
+          unzip -q Godot_v4.7.2-stable_export_templates.tpz -d /tmp/godot-templates
+          cp -a /tmp/godot-templates/templates/. ~/.local/share/godot/export_templates/4.7.2.stable/
+          godot --version
+      - name: Configure signing and Godot
+        shell: bash
+        run: |
+          set -euxo pipefail
+          mkdir -p build_support builds ~/.config/godot
+          keytool -genkeypair -keystore build_support/debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=World Defense,C=TR"
+          cat > ~/.config/godot/editor_settings-4.7.tres <<EOF
+          [gd_resource type="EditorSettings" format=3]
+
+          [resource]
+          export/android/android_sdk_path = "$ANDROID_HOME"
+          export/android/java_sdk_path = "$JAVA_HOME"
+          EOF
+      - name: Parse project
+        shell: bash
+        run: |
+          set -o pipefail
+          godot --headless --editor --path . --import --quit 2>&1 | tee builds/godot-import.log
+          ! grep -E "SCRIPT ERROR|Parse Error|Failed to load script|ERROR:" builds/godot-import.log
+      - name: Deep game QA
+        shell: bash
+        run: |
+          set -euxo pipefail
+          godot --headless --path . res://scenes/QARunner.tscn 2>&1 | tee builds/deep-qa.log
+          grep -q "WORLD_DEFENSE_DEEP_QA_OK" builds/deep-qa.log
+      - name: Export APK
+        shell: bash
+        run: |
+          set -euxo pipefail
+          godot --headless --path . --export-debug Android builds/World-Defense-runtime.apk 2>&1 | tee builds/godot-export.log
+          test -s builds/World-Defense-runtime.apk
+          unzip -tq builds/World-Defense-runtime.apk
+          ! grep -E "SCRIPT ERROR|Parse Error|Failed to load script|^ERROR:" builds/godot-export.log
+          "$ANDROID_HOME/build-tools/36.0.0/zipalign" -c -P 16 4 builds/World-Defense-runtime.apk
+          "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --verbose --print-certs builds/World-Defense-runtime.apk | tee builds/apksigner.txt
+          "$ANDROID_HOME/build-tools/36.0.0/aapt" dump badging builds/World-Defense-runtime.apk | tee builds/badging.txt
+          sha256sum builds/World-Defense-runtime.apk | tee builds/SHA256.txt
+          stat -c '%s' builds/World-Defense-runtime.apk | tee builds/SIZE_BYTES.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: world-defense-runtime-apk
+          path: builds/
+          retention-days: 14
+
+
+  profile-preflight:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Verify generic non-Pixel Android hardware profile
+        shell: bash
+        run: |
+          set -euxo pipefail
+          export ANDROID_HOME=/usr/local/lib/android/sdk
+          "$ANDROID_HOME/cmdline-tools/latest/bin/avdmanager" list device | tee /tmp/avd-devices.txt
+          grep -q '"medium_phone"' /tmp/avd-devices.txt
+
+  runtime:
+    needs: [build, profile-preflight]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      max-parallel: 3
+      matrix:
+        include:
+          - api: 35
+            profile: medium_phone
+            slug: samsung-galaxy-a16-5g
+            model: Samsung Galaxy A16 5G
+            width: 1080
+            height: 2340
+            ram: 8192
+          - api: 35
+            profile: medium_phone
+            slug: samsung-galaxy-s24-ultra
+            model: Samsung Galaxy S24 Ultra
+            width: 1440
+            height: 3120
+            ram: 12288
+          - api: 35
+            profile: medium_phone
+            slug: xiaomi-redmi-14c
+            model: Xiaomi Redmi 14C
+            width: 720
+            height: 1640
+            ram: 6144
+          - api: 35
+            profile: medium_phone
+            slug: xiaomi-redmi-note-14-5g
+            model: Xiaomi Redmi Note 14 5G
+            width: 1080
+            height: 2400
+            ram: 8192
+          - api: 35
+            profile: medium_phone
+            slug: oppo-a3-5g
+            model: OPPO A3 5G
+            width: 720
+            height: 1604
+            ram: 4096
+          - api: 35
+            profile: medium_phone
+            slug: oppo-reno13-5g
+            model: OPPO Reno13 5G
+            width: 1256
+            height: 2760
+            ram: 8192
+          - api: 35
+            profile: medium_phone
+            slug: vivo-y28s-5g
+            model: vivo Y28s 5G
+            width: 720
+            height: 1612
+            ram: 8192
+          - api: 35
+            profile: medium_phone
+            slug: vivo-x200
+            model: vivo X200
+            width: 1260
+            height: 2800
+            ram: 12288
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: world-defense-runtime-apk
+          path: builds
+      - name: Boot emulator, install, launch and full runtime QA
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: ${{ matrix.api }}
+          arch: x86_64
+          target: google_apis
+          profile: ${{ matrix.profile }}
+          ram-size: ${{ matrix.ram }}M
+          disable-animations: false
+          emulator-options: -no-snapshot -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -skin ${{ matrix.width }}x${{ matrix.height }}
+          script: bash .github/scripts/runtime-test.sh "${{ matrix.api }}" "${{ matrix.slug }}"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: runtime-${{ matrix.api }}-${{ matrix.slug }}
+          path: runtime-${{ matrix.api }}-${{ matrix.slug }}/
+          retention-days: 14

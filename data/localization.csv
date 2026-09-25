@@ -3,7 +3,26 @@ play,BATTLE,SCHLACHT,COMBAT,전투,戦闘
 defense,DEFENSE,VERTEIDIGUNG,DÉFENSE,방어,防衛
 army,ARMY,ARMEE,ARMÉE,군대,軍隊
 base,BASE,BASIS,BASE,기지,基地
+intel,INTEL,AUFKLÄRUNG,RENSEIGNEMENT,정보,情報
 victory,VICTORY,SIEG,VICTOIRE,승리,勝利
 defeat,DEFEAT,NIEDERLAGE,DÉFAITE,패배,敗北
 collect_all,COLLECT ALL,ALLES SAMMELN,TOUT RÉCUPÉRER,모두 받기,すべて受取
 wave,WAVE,WELLE,VAGUE,웨이브,ウェーブ
+stage,STAGE,STUFE,NIVEAU,스테이지,ステージ
+power,POWER,MACHT,PUISSANCE,전투력,戦力
+gold,GOLD,GOLD,OR,골드,ゴールド
+gems,GEMS,EDELSTEINE,GEMMES,보석,ジェム
+supplies,SUPPLIES,NACHSCHUB,RAVITAILLEMENT,보급품,物資
+base_hp,BASE,BASIS,BASE,기지,基地
+credits,CREDITS,KREDITS,CRÉDITS,크레딧,クレジット
+airstrike,AIRSTRIKE,LUFTSCHLAG,FRAPPE AÉRIENNE,공습,航空攻撃
+reinforcement,REINFORCEMENT,VERSTÄRKUNG,RENFORT,증원,増援
+emp,EMP,EMP,IEM,EMP,EMP
+offline_cap,Offline base production: up to 6 hours,Offline-Basisproduktion: bis zu 6 Stunden,Production hors ligne de la base : jusqu’à 6 heures,기지 오프라인 생산: 최대 6시간,基地のオフライン生産: 最大6時間
+intel_approaching,THREAT APPROACHING,GEFAHR NÄHERT SICH,MENACE EN APPROCHE,위협 접근 중,脅威接近中
+intel_flank,THREAT: %s FLANK,GEFAHR: %s FLANKE,MENACE : FLANC %s,위협: %s 측면,脅威: %s 側面
+left,LEFT,LINKS,GAUCHE,왼쪽,左
+right,RIGHT,RECHTS,DROITE,오른쪽,右
+intel_count,%d enemies approaching,%d Feinde nähern sich,%d ennemis approchent,적 %d명 접근 중,敵%d体が接近中
+intel_classes,Air/ground classes detected,Luft-/Bodenklassen erkannt,Classes air/sol détectées,공중/지상 병과 감지,空中/地上クラスを検出
+intel_full,Route class and special threat fully analyzed,Route Klasse und Spezialbedrohung vollständig analysiert,Route classe et menace spéciale entièrement analysées,경로 병과 특수 위협 분석 완료,ルート・クラス・特殊脅威の分析完了
