@@ -1,11 +1,11 @@
 class_name UnitCatalog
 
 const TOWERS={
- "machine_gun":{"damage":18.0,"range":260.0,"cooldown":0.18,"role":"infantry"},
- "cannon":{"damage":55.0,"range":310.0,"cooldown":0.75,"role":"armor"},
- "missile":{"damage":78.0,"range":390.0,"cooldown":1.05,"role":"air"},
- "laser":{"damage":34.0,"range":300.0,"cooldown":0.28,"role":"support"},
- "tesla":{"damage":42.0,"range":270.0,"cooldown":0.55,"role":"crowd"}
+ "machine_gun":{"damage":18.0,"range":260.0,"cooldown":0.18,"role":"anti_infantry"},
+ "cannon":{"damage":55.0,"range":310.0,"cooldown":0.75,"role":"anti_armor"},
+ "missile":{"damage":78.0,"range":390.0,"cooldown":1.05,"role":"anti_air"},
+ "laser":{"damage":34.0,"range":300.0,"cooldown":0.28,"role":"precision"},
+ "tesla":{"damage":42.0,"range":270.0,"cooldown":0.55,"role":"crowd_control"}
 }
 
 const ARMY={
