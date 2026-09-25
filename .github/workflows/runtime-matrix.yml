@@ -87,8 +87,26 @@ jobs:
           path: builds/
           retention-days: 14
 
+
+  profile-preflight:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Install current Android device catalog
+        shell: bash
+        run: |
+          set -euxo pipefail
+          export ANDROID_HOME=/usr/local/lib/android/sdk
+          SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          "$SDKMANAGER" "cmdline-tools;21.0"
+          AVDMANAGER="$ANDROID_HOME/cmdline-tools/21.0/bin/avdmanager"
+          "$AVDMANAGER" list device | tee /tmp/avd-devices.txt
+          for p in pixel_8a pixel_9 pixel_9_pro pixel_9_pro_xl pixel_9_pro_fold pixel_10 pixel_10_pro pixel_10_pro_xl; do
+            grep -q "\"$p\"" /tmp/avd-devices.txt
+          done
+
   runtime:
-    needs: build
+    needs: [build, profile-preflight]
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     strategy:
@@ -118,6 +136,13 @@ jobs:
         with:
           name: world-defense-runtime-apk
           path: builds
+      - name: Use current Android device profile catalog
+        shell: bash
+        run: |
+          set -euxo pipefail
+          export ANDROID_HOME=/usr/local/lib/android/sdk
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "cmdline-tools;21.0"
+          echo "$ANDROID_HOME/cmdline-tools/21.0/bin" >> "$GITHUB_PATH"
       - name: Boot emulator, install, launch and full runtime QA
         uses: reactivecircus/android-emulator-runner@v2
         with:
