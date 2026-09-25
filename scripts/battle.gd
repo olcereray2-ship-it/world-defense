@@ -175,15 +175,22 @@ func move_enemies(d:float):
    continue
   if bool(e.get("air",false)):
    e["p"]=e.get("p",Vector2.ZERO).move_toward(base_pos,float(e.get("speed",1.0))*d)
-   if e.get("p",Vector2.ZERO).distance_to(base_pos)<25.0:hit_base(e,34.0)
+   if e.get("p",Vector2.ZERO).distance_to(base_pos)<25.0:hit_base(e,_enemy_base_damage(e))
   else:
    var n=int(e.get("seg",0))+1
    if n>=route.size():
-    hit_base(e,28.0)
+    hit_base(e,_enemy_base_damage(e))
     continue
    e["p"]=e.get("p",Vector2.ZERO).move_toward(route[n],float(e.get("speed",1.0))*d)
    if e.get("p",Vector2.ZERO).distance_to(route[n])<10.0:e["seg"]=n
  if hp<=0.0:lose()
+
+func _enemy_base_damage(e:Dictionary)->float:
+ var kind=str(e.get("kind",""))
+ var raw:=28.0
+ if EnemyCatalog.TYPES.has(kind):
+  raw=float(EnemyCatalog.TYPES[kind].get("damage",28.0))
+ return maxf(1.0,raw*DifficultyCurve.enemy_damage(GameState.stage,maxi(1,wave)))
 
 func hit_base(e:Dictionary,damage:float):
  hp=maxf(0.0,hp-maxf(0.0,damage))
@@ -239,10 +246,13 @@ func friendly_fire(d:float):
     target=e
     best=dist
   if target!=null:
+   var matchup=MobileArmy.matchup(kind,str(target.get("kind","")))
+   if bool(stage_data.get("bridge",false)):
+    matchup*=BridgeRules.mobile_hold_bonus(kind)
    var dmg=CombatMath.damage(
     float(u.get("damage",1.0)),
     float(target.get("armor",0.0)),
-    MobileArmy.matchup(kind,str(target.get("kind",""))))
+    matchup)
    target["hp"]=float(target.get("hp",0.0))-dmg
    friendly_shots.append({"a":pos,"b":target.get("p",Vector2.ZERO),"life":0.10,"kind":kind})
    u["cool"]=1.0/maxf(0.05,float(rates.get(kind,1.0)))
@@ -314,7 +324,7 @@ func _draw():
  for s in shots:draw_line(s.get("a",Vector2.ZERO),s.get("b",Vector2.ZERO),Color.WHITE,5)
  for s in friendly_shots:draw_line(s.get("a",Vector2.ZERO),s.get("b",Vector2.ZERO),Color("#9ee8ff"),4)
  for x in explosions:
-  draw_circle(x.get("p",Vector2.ZERO),20.0+float(x.get("age",0.0))*110.0,Color(1.0,0.55,0.15,maxf(0.0,1.0-float(x.get("age",0.0))*2.2)))
+  BattleVFX.explosion(self,x.get("p",Vector2.ZERO),float(x.get("age",0.0)))
  draw_rect(Rect2(30,35,1020,105),Color(0.02,0.04,0.07,.82))
  var hud="%s %d   %s %d/5   %s %d   %s %d"%[
   LocalizationManager.text("stage"),GameState.stage,
