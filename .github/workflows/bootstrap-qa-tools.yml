@@ -19,7 +19,7 @@ jobs:
           mkdir -p "$RUNNER_TEMP/qa-tools"
           wget -q https://github.com/godotengine/godot-builds/releases/download/4.7.2-stable/Godot_v4.7.2-stable_linux.x86_64.zip -O "$RUNNER_TEMP/qa-tools/godot-4.7.2-linux-x86_64.zip"
           unzip -t "$RUNNER_TEMP/qa-tools/godot-4.7.2-linux-x86_64.zip"
-      - name: Install Android emulator runtime and x86_64 API 29 image
+      - name: Install and split Android emulator runtime
         shell: bash
         run: |
           set -euxo pipefail
@@ -38,7 +38,8 @@ jobs:
           cp -a "$ANDROID_HOME/cmdline-tools/latest" "$RUNNER_TEMP/android-sdk/cmdline-tools/"
           mkdir -p "$RUNNER_TEMP/android-sdk/system-images/android-29/google_apis"
           cp -a "$ANDROID_HOME/system-images/android-29/google_apis/x86_64" "$RUNNER_TEMP/android-sdk/system-images/android-29/google_apis/"
-          tar -C "$RUNNER_TEMP" -cf "$RUNNER_TEMP/qa-tools/android-emulator-api29-x86_64.tar" android-sdk
+          tar --sparse -C "$RUNNER_TEMP" -cf - android-sdk | zstd -T0 -5 -o "$RUNNER_TEMP/qa-tools/android-emulator-api29-x86_64.tar.zst"
+          split -b 350M -d -a 2 "$RUNNER_TEMP/qa-tools/android-emulator-api29-x86_64.tar.zst" "$RUNNER_TEMP/qa-tools/android.part-"
           ls -lh "$RUNNER_TEMP/qa-tools"
       - uses: actions/upload-artifact@v4
         with:
@@ -46,11 +47,59 @@ jobs:
           path: ${{ runner.temp }}/qa-tools/godot-4.7.2-linux-x86_64.zip
           compression-level: 0
           retention-days: 3
-          if-no-files-found: error
       - uses: actions/upload-artifact@v4
         with:
-          name: android-emulator-api29-x86_64
-          path: ${{ runner.temp }}/qa-tools/android-emulator-api29-x86_64.tar
+          name: android-runtime-part-00
+          path: ${{ runner.temp }}/qa-tools/android.part-00
           compression-level: 0
+          if-no-files-found: ignore
           retention-days: 3
-          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        with:
+          name: android-runtime-part-01
+          path: ${{ runner.temp }}/qa-tools/android.part-01
+          compression-level: 0
+          if-no-files-found: ignore
+          retention-days: 3
+      - uses: actions/upload-artifact@v4
+        with:
+          name: android-runtime-part-02
+          path: ${{ runner.temp }}/qa-tools/android.part-02
+          compression-level: 0
+          if-no-files-found: ignore
+          retention-days: 3
+      - uses: actions/upload-artifact@v4
+        with:
+          name: android-runtime-part-03
+          path: ${{ runner.temp }}/qa-tools/android.part-03
+          compression-level: 0
+          if-no-files-found: ignore
+          retention-days: 3
+      - uses: actions/upload-artifact@v4
+        with:
+          name: android-runtime-part-04
+          path: ${{ runner.temp }}/qa-tools/android.part-04
+          compression-level: 0
+          if-no-files-found: ignore
+          retention-days: 3
+      - uses: actions/upload-artifact@v4
+        with:
+          name: android-runtime-part-05
+          path: ${{ runner.temp }}/qa-tools/android.part-05
+          compression-level: 0
+          if-no-files-found: ignore
+          retention-days: 3
+      - uses: actions/upload-artifact@v4
+        with:
+          name: android-runtime-part-06
+          path: ${{ runner.temp }}/qa-tools/android.part-06
+          compression-level: 0
+          if-no-files-found: ignore
+          retention-days: 3
+      - uses: actions/upload-artifact@v4
+        with:
+          name: android-runtime-part-07
+          path: ${{ runner.temp }}/qa-tools/android.part-07
+          compression-level: 0
+          if-no-files-found: ignore
+          retention-days: 3
