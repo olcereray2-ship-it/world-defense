@@ -1,7 +1,7 @@
 name: Build Android APK
 on:
   push:
-    branches: [main]
+    branches: [main, runtime-matrix-50]
   workflow_dispatch: {}
 permissions:
   contents: read
@@ -39,10 +39,14 @@ jobs:
           unzip -q Godot_v4.7.2-stable_export_templates.tpz -d /tmp/godot-templates
           cp -a /tmp/godot-templates/templates/. ~/.local/share/godot/export_templates/4.7.2.stable/
           godot --version
-      - name: Configure Godot Android paths
+      - name: Configure signing and Godot Android paths
         shell: bash
         run: |
-          mkdir -p ~/.config/godot
+          set -euxo pipefail
+          mkdir -p ~/.config/godot build_support
+          if [ ! -f build_support/debug.keystore ]; then
+            keytool -genkeypair -keystore build_support/debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=World Defense,C=TR"
+          fi
           cat > ~/.config/godot/editor_settings-4.7.tres <<EOF
           [gd_resource type="EditorSettings" format=3]
 
