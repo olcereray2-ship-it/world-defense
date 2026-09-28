@@ -28,8 +28,9 @@ jobs:
           SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
           yes | "$SDKMANAGER" --licenses >/dev/null || true
           "$SDKMANAGER" "platform-tools" "emulator" "system-images;android-29;google_apis;x86_64"
-          "$ANDROID_HOME/emulator/emulator" -version
           "$ANDROID_HOME/platform-tools/adb" version
+          test -x "$ANDROID_HOME/emulator/emulator"
+          test -f "$ANDROID_HOME/system-images/android-29/google_apis/x86_64/system.img"
           mkdir -p "$RUNNER_TEMP/android-sdk"
           cp -a "$ANDROID_HOME/platform-tools" "$RUNNER_TEMP/android-sdk/"
           cp -a "$ANDROID_HOME/emulator" "$RUNNER_TEMP/android-sdk/"
