@@ -1,0 +1,107 @@
+name: Android Emulator QA
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/emulator-qa.yml'
+  workflow_dispatch: {}
+permissions:
+  contents: read
+jobs:
+  emulator-qa:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Enable KVM
+        shell: bash
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm || true
+          ls -l /dev/kvm
+      - name: Install Android SDK 36
+        shell: bash
+        run: |
+          set -euxo pipefail
+          export ANDROID_HOME=/usr/local/lib/android/sdk
+          export ANDROID_SDK_ROOT=$ANDROID_HOME
+          SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          yes | "$SDKMANAGER" --licenses >/dev/null || true
+          "$SDKMANAGER" "platform-tools" "platforms;android-36" "build-tools;36.0.0"
+          echo "ANDROID_HOME=$ANDROID_HOME" >> "$GITHUB_ENV"
+          echo "ANDROID_SDK_ROOT=$ANDROID_HOME" >> "$GITHUB_ENV"
+      - name: Install Godot 4.7.2 and templates
+        shell: bash
+        run: |
+          set -euxo pipefail
+          wget -q https://github.com/godotengine/godot-builds/releases/download/4.7.2-stable/Godot_v4.7.2-stable_linux.x86_64.zip
+          unzip -q Godot_v4.7.2-stable_linux.x86_64.zip
+          chmod +x Godot_v4.7.2-stable_linux.x86_64
+          sudo install Godot_v4.7.2-stable_linux.x86_64 /usr/local/bin/godot
+          wget -q https://github.com/godotengine/godot-builds/releases/download/4.7.2-stable/Godot_v4.7.2-stable_export_templates.tpz
+          mkdir -p ~/.local/share/godot/export_templates/4.7.2.stable
+          unzip -q Godot_v4.7.2-stable_export_templates.tpz -d /tmp/godot-templates
+          cp -a /tmp/godot-templates/templates/. ~/.local/share/godot/export_templates/4.7.2.stable/
+      - name: Configure Godot and x86_64 QA build
+        shell: bash
+        run: |
+          mkdir -p ~/.config/godot build qa-artifacts
+          cat > ~/.config/godot/editor_settings-4.7.tres <<EOF
+          [gd_resource type="EditorSettings" format=3]
+
+          [resource]
+          export/android/android_sdk_path = "$ANDROID_HOME"
+          export/android/java_sdk_path = "$JAVA_HOME"
+          EOF
+          sed -i 's/architectures\/arm64-v8a=true/architectures\/arm64-v8a=false/' export_presets.cfg
+          sed -i 's/architectures\/x86_64=false/architectures\/x86_64=true/' export_presets.cfg
+          godot --headless --editor --path . --import --quit
+          godot --headless --path . --export-debug Android build/World-Defense-QA-x86_64.apk
+          test -s build/World-Defense-QA-x86_64.apk
+      - name: Run real Android emulator QA
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 29
+          target: google_apis
+          arch: x86_64
+          profile: pixel_2
+          cores: 4
+          ram-size: 4096M
+          heap-size: 512M
+          disk-size: 4096M
+          disable-animations: true
+          disable-spellchecker: true
+          emulator-boot-timeout: 600
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -camera-back none -camera-front none
+          script: |
+            set -euxo pipefail
+            adb wait-for-device
+            adb shell settings put global window_animation_scale 0
+            adb shell settings put global transition_animation_scale 0
+            adb shell settings put global animator_duration_scale 0
+            adb install -r build/World-Defense-QA-x86_64.apk
+            adb shell am force-stop com.ahmeterayolcer.worlddefense
+            adb logcat -c
+            adb shell monkey -p com.ahmeterayolcer.worlddefense -c android.intent.category.LAUNCHER 1
+            sleep 7
+            adb exec-out screencap -p > qa-artifacts/01-main-menu.png
+            adb shell uiautomator dump /sdcard/window.xml || true
+            adb pull /sdcard/window.xml qa-artifacts/window.xml || true
+            adb shell dumpsys activity activities > qa-artifacts/activity.txt
+            adb shell dumpsys meminfo com.ahmeterayolcer.worlddefense > qa-artifacts/meminfo.txt
+            adb shell dumpsys gfxinfo com.ahmeterayolcer.worlddefense > qa-artifacts/gfxinfo.txt
+            adb logcat -d > qa-artifacts/logcat.txt
+            grep -E 'FATAL EXCEPTION|AndroidRuntime|SCRIPT ERROR|ERROR:' qa-artifacts/logcat.txt > qa-artifacts/errors.txt || true
+            test -s qa-artifacts/01-main-menu.png
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: World-Defense-Emulator-QA
+          path: qa-artifacts/
+          if-no-files-found: warn
+          retention-days: 7
