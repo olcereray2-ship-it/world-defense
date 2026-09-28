@@ -1,0 +1,55 @@
+name: Bootstrap QA Tools
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/bootstrap-qa-tools.yml'
+  workflow_dispatch: {}
+permissions:
+  contents: read
+jobs:
+  package-tools:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - name: Package Godot 4.7.2
+        shell: bash
+        run: |
+          set -euxo pipefail
+          mkdir -p "$RUNNER_TEMP/qa-tools"
+          wget -q https://github.com/godotengine/godot-builds/releases/download/4.7.2-stable/Godot_v4.7.2-stable_linux.x86_64.zip -O "$RUNNER_TEMP/qa-tools/godot-4.7.2-linux-x86_64.zip"
+          unzip -t "$RUNNER_TEMP/qa-tools/godot-4.7.2-linux-x86_64.zip"
+      - name: Install Android emulator runtime and x86_64 API 29 image
+        shell: bash
+        run: |
+          set -euxo pipefail
+          export ANDROID_HOME=/usr/local/lib/android/sdk
+          export ANDROID_SDK_ROOT=$ANDROID_HOME
+          SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          yes | "$SDKMANAGER" --licenses >/dev/null || true
+          "$SDKMANAGER" "platform-tools" "emulator" "system-images;android-29;google_apis;x86_64"
+          "$ANDROID_HOME/emulator/emulator" -version
+          "$ANDROID_HOME/platform-tools/adb" version
+          mkdir -p "$RUNNER_TEMP/android-sdk"
+          cp -a "$ANDROID_HOME/platform-tools" "$RUNNER_TEMP/android-sdk/"
+          cp -a "$ANDROID_HOME/emulator" "$RUNNER_TEMP/android-sdk/"
+          mkdir -p "$RUNNER_TEMP/android-sdk/cmdline-tools"
+          cp -a "$ANDROID_HOME/cmdline-tools/latest" "$RUNNER_TEMP/android-sdk/cmdline-tools/"
+          mkdir -p "$RUNNER_TEMP/android-sdk/system-images/android-29/google_apis"
+          cp -a "$ANDROID_HOME/system-images/android-29/google_apis/x86_64" "$RUNNER_TEMP/android-sdk/system-images/android-29/google_apis/"
+          tar -C "$RUNNER_TEMP" -cf "$RUNNER_TEMP/qa-tools/android-emulator-api29-x86_64.tar" android-sdk
+          ls -lh "$RUNNER_TEMP/qa-tools"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: godot-4.7.2-linux-x86_64
+          path: ${{ runner.temp }}/qa-tools/godot-4.7.2-linux-x86_64.zip
+          compression-level: 0
+          retention-days: 3
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        with:
+          name: android-emulator-api29-x86_64
+          path: ${{ runner.temp }}/qa-tools/android-emulator-api29-x86_64.tar
+          compression-level: 0
+          retention-days: 3
+          if-no-files-found: error
